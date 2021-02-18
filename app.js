@@ -1,49 +1,21 @@
-/*
-const fs = require('fs');
+const express = require('express');
+const bodyParser = require('body-parser');
 
-fs.writeFile('example.txt', 'Hello World', (err) => {
-    console.log("Error:"+ err);
+const productRoutes = require('./routes/product');
+
+const app = express();
+
+app.use(bodyParser.json());
+
+app.use((req, res, next) => {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'OPTION, GET, POST, DELETE, PATCH, PUT');
+    res.setHeader('Access-Control-Allow-Header', '*');
+    next();
 });
 
-console.log('Node script finish');
-*/
-const http = require('http');
+app.use('/product', productRoutes);
 
-const server = http.createServer((req, res) => {
-    // console.log(req.url, req.method, req.headers);
-    if(req.url == '/')
-    {
-        res.setHeader('Content-Type', 'text/html');
-        let htmlBody = '<body><h1>Hello World</h1></body>';
-        let htmlTemplate = `<html><head><title>Node.js</title></head>${htmlBody}</html>`;
-        res.write(htmlTemplate);
-        res.end();
-    }
-    else if(req.url == '/users' && req.method == 'POST')
-    {
-        let data = [{"id": 0, "name": "Yosef"}, {"id": 1, "name": "Ivan"}];
-        const dataParams = [];
-        req.on('data', (chunk)=> {
-            console.log(chunk);
-            dataParams.push(chunk);
-        });
-        req.on('end', () => {
-            if(dataParams.length != 0)
-            {
-                const parseDataParams = Buffer.concat(dataParams).toString();
-                console.log(parseDataParams);
-                const userId = parseDataParams.split('=')[1];
-                data = data.filter((user) => user.id == userId);
-            }
-            res.setHeader('Content-Type', 'application/json');
-            const stringifyData = JSON.stringify(data);
-            const jsonResponse = `{"status": true, "data": ${stringifyData}}`;
-            res.write(jsonResponse);
-            res.end();
-        });
-    }
-    
-});
+const PORT = process.env.PORT || 2500;
 
-server.listen(2500);
-
+app.listen(PORT, ()=> { console.log(`Server start on ${PORT}`); });
