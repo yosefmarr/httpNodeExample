@@ -18,4 +18,12 @@ router.get('/products', productController.getProducts);
 router.get('/:productId', productController.getProduct);
 
 
+/**
+ * 
+ * /product/product
+*/ 
+router.post('/product', productController.createProduct);
+
+
+
 module.exports = router;
