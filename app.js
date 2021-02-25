@@ -1,12 +1,18 @@
 const express = require('express');
 const bodyParser = require('body-parser');
+const multer = require('multer');
+const path = require('path');
+
+const serverConfig = require('./configs/server-config');
+const filesConfig = require('./configs/files-config');
 
 const productRoutes = require('./routes/product');
 
 const app = express();
 
+app.use(bodyParser.urlencoded({extended: false}));
 app.use(bodyParser.json());
-
+app.use(multer({storage: filesConfig.fileStorage, fileFilter: filesConfig.fileFilter}).single('image'));
 app.use((req, res, next) => {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'OPTION, GET, POST, DELETE, PATCH, PUT');
@@ -14,8 +20,8 @@ app.use((req, res, next) => {
     next();
 });
 
+app.use(express.static(path.join(__dirname, 'public')));
+
 app.use('/product', productRoutes);
 
-const PORT = process.env.PORT || 2500;
-
-app.listen(PORT, ()=> { console.log(`Server start on ${PORT}`); });
+app.listen(serverConfig.port, serverConfig.ip, ()=> { console.log(`Server start at ${serverConfig.server}:${serverConfig.port}`); });
