@@ -67,22 +67,52 @@ exports.readProducts = (req, res, next) => {
 
 exports.readProduct = (req, res, next) => {
     const productId = req.params.productId;
-    // db
-    let products = [
-        { id: 0, title: 'Product0', price: 10},
-        { id: 1, title: 'Product1', price: 5},
-        { id: 2, title: 'Product2', price: 8}
-    ];
-    const product = products.filter(p => p.id == productId)[0] || {};
-    res.status(200).json({
-        product: product
+    rdb.ref('products').child(productId).once('value', (snapshot) => {
+        let product = snapshot.val();
+        if(product != null)
+        {
+            product.imageUrl = `${serverConfig.scheme}://${serverConfig.server}:${serverConfig.port}/${product.imageUrl}`;
+            product = { id: productId, ...product};
+        }
+        res.status(200).json({
+            product: {... product}
+        });
     });
 }
 
 exports.updateProduct = (req, res, next) => { 
-
+    const image = req.file;
+    const productId = req.params.productId;
+    if(image)
+    {
+        const imageUrl = (image.path).replace(/public\\/, '').replace('\\', '/');
+        req.body.imageUrl = imageUrl ;
+    }
+    if(req.body.price)
+    {
+        req.body.price = parseFloat(req.body.price);
+    }
+    rdb.ref('products').child(productId).update({...req.body})
+    .then(() => {
+        if(req.body.imageUrl)
+        {
+            req.body.imageUrl = `${serverConfig.scheme}://${serverConfig.server}:${serverConfig.port}/${imageUrl}`;
+        }
+        res.status(201).json({
+            id: productId,
+            ...req.body
+        });
+    })
+    .catch(() => {
+        res.status(401).json({
+            message: "Error al actualizar producto"
+        });
+    });
 }
 
 exports.deleteProduct = (req, res, next) => { 
-    
+    const productId = req.params.productId;
+    rdb.ref('products').child(productId).remove()
+    .then(() => res.status(200).json({message: "Producto eliminado correctamente"}))
+    .catch(() => res.status(401).json({message: "Error al eliminar producto"}));
 }
