@@ -26,46 +26,28 @@ exports.createProduct = (req, res, next) =>
             product: { id: ref.key, ...newProduct}
         });
     });
-
-    // const id = Math.floor(Math.random() * 100);
-    /*const newProduct = {
-        title: req.body.title,
-        price: req.body.price
-    }
-    rdb.ref('products').push(newProduct)
-    .then((ref) => {
-        res.status(201).json({
-            message: 'Producto agregado correctamente',
-            product: { id: ref.key, ...newProduct}
-        });
-    });*/
-    // db
-    /*res.status(201).json({
-        message: 'Producto agregado correctamente',
-        product: {...newProduct}
-    });*/
 }
 
-exports.readProducts = (req, res, next) => {
+exports.readProducts = (req, res, next) => 
+{
     rdb.ref('products').once('value', (snapshot) => {
         let products = snapshot.val();
-        products = Object.keys(products).map(key => ({ id: key, ...products[key] }));
+        if(products)
+        {
+            products = Object.keys(products).map(key => {
+                products[key].imageUrl = `${serverConfig.scheme}://${serverConfig.server}:${serverConfig.port}/${products[key].imageUrl}`;
+                return ({ id: key, ...products[key] })
+            });
+        }
+        products = products || [];
         res.status(200).json({
             products
         });
     });
-
-    // db
-    /*res.status(200).json({
-        products : [
-            { id: 0, title: 'Product0', price: 10},
-            { id: 1, title: 'Product1', price: 5},
-            { id: 2, title: 'Product2', price: 8}
-        ]
-    });*/
 }
 
-exports.readProduct = (req, res, next) => {
+exports.readProduct = (req, res, next) => 
+{
     const productId = req.params.productId;
     rdb.ref('products').child(productId).once('value', (snapshot) => {
         let product = snapshot.val();
@@ -75,42 +57,47 @@ exports.readProduct = (req, res, next) => {
             product = { id: productId, ...product};
         }
         res.status(200).json({
-            product: {... product}
+            product: {...product}
         });
     });
 }
 
-exports.updateProduct = (req, res, next) => { 
+exports.updateProduct = (req, res, next) => 
+{ 
     const image = req.file;
     const productId = req.params.productId;
+    let imageUrlToResponse = '';
+    if(req.body.price)
+    {
+        req.body.price = parseFloat(req.body.price);
+    }
     if(image)
     {
         const imageUrl = (image.path).replace(/public\\/, '').replace('\\', '/');
         req.body.imageUrl = imageUrl ;
-    }
-    if(req.body.price)
-    {
-        req.body.price = parseFloat(req.body.price);
+        imageUrlToResponse = `${serverConfig.scheme}://${serverConfig.server}:${serverConfig.port}/${imageUrl}`;
     }
     rdb.ref('products').child(productId).update({...req.body})
     .then(() => {
         if(req.body.imageUrl)
         {
-            req.body.imageUrl = `${serverConfig.scheme}://${serverConfig.server}:${serverConfig.port}/${imageUrl}`;
+            req.body.imageUrl = imageUrlToResponse;
         }
         res.status(201).json({
             id: productId,
             ...req.body
         });
     })
-    .catch(() => {
+    .catch((err) => {
+        console.log(err);
         res.status(401).json({
             message: "Error al actualizar producto"
         });
     });
 }
 
-exports.deleteProduct = (req, res, next) => { 
+exports.deleteProduct = (req, res, next) => 
+{ 
     const productId = req.params.productId;
     rdb.ref('products').child(productId).remove()
     .then(() => res.status(200).json({message: "Producto eliminado correctamente"}))
