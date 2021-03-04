@@ -6,6 +6,10 @@ const path = require('path');
 const serverConfig = require('./configs/server-config');
 const filesConfig = require('./configs/files-config');
 
+const mongoConnect = require('./services/mongodb/mongodb').mongoConnect;
+const firebaseConnect = require('./services/firebase/firebase').firebaseConnect;
+
+
 const productRoutes = require('./routes/product');
 
 const app = express();
@@ -24,4 +28,9 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/product', productRoutes);
 
-app.listen(serverConfig.port, serverConfig.ip, ()=> { console.log(`Server start at ${serverConfig.server}:${serverConfig.port}`); });
+firebaseConnect();
+
+mongoConnect(() => {
+    app.listen(serverConfig.port, serverConfig.ip, ()=> { console.log(`Server start at ${serverConfig.server}:${serverConfig.port}`); });
+});
+
