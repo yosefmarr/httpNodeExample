@@ -1,9 +1,65 @@
 const serverConfig = require('../configs/server-config');
+const mongodb = require('mongodb');
 const getMongoDb = require('../services/mongodb/mongodb').getDb;
 const getFirebaseDb = require('../services/firebase/firebase').getDb;
 
 module.exports = class Product
 {
+    static getAllMongo()
+    {
+        const mbd = getMongoDb();
+        return new Promise((resolve, reject) => 
+        {
+            mbd.collection('products')
+            .find()
+            .toArray()
+            .then(products => {
+                if(products)
+                {
+                    products = products.map((product) => ({
+                            id: product['_id'],
+                            title: product.title, 
+                            price: product.price,
+                            imageUrl: `${serverConfig.scheme}://${serverConfig.server}:${serverConfig.port}/${product.imageUrl}`
+                        })
+                    );
+                }
+                products = products || [];
+                resolve({message: 'success', products: products});
+            })
+            .catch(err => {
+                reject('Error al agregar producto en MongoDb');
+            });
+        });
+    }
+
+    static getByIdMongo(productId)
+    {
+        const mbd = getMongoDb();
+        return new Promise((resolve, reject) => 
+        {
+            mbd.collection('products')
+            .find({ _id: new mongodb.ObjectId(productId) })
+            .next()
+            .then(product => {
+                if(product)
+                {
+                    product = {
+                        id: product['_id'],
+                        title: product.title, 
+                        price: product.price,
+                        imageUrl: `${serverConfig.scheme}://${serverConfig.server}:${serverConfig.port}/${product.imageUrl}`
+                    }
+                }
+                resolve({message: 'success', product: {...product}});
+            })
+            .catch(err => {
+                reject('Error al agregar producto en MongoDb');
+            });
+            
+        });
+    }
+
     constructor(title, price, image, id)
     {
         this.title = title;
@@ -68,4 +124,32 @@ module.exports = class Product
             });
         });
     }
+
+    updateMongo()
+    {
+        const mbd = getMongoDb();
+        return new Promise((resolve, reject) => 
+        {
+            let updateProduct = {};
+            if(this.title) updateProduct.title = this.title;
+            if(this.price) updateProduct.price = this.price;
+            if(this.imageUrl) updateProduct.imageUrl = this.imageUrl;
+            mbd.collection('products')
+            .updateOne({
+                _id: new mongodb.ObjectId(this.id)
+            },
+            {
+                $set: updateProduct
+            })
+            .then(result => {
+                resolve({
+                    message: 'Producto editado correctamente'
+                });
+            })
+            .catch(err => {
+                reject('Error al editar producto en MongoDb');
+            });
+        });
+    }
+
 }

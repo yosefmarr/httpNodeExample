@@ -13,7 +13,7 @@ const firebaseConnect = () => {
 
 const getDb = () => {
     if(rdb) return rdb;
-    throw 'MongoDb is not found';
+    throw 'Firebase is not found';
 }
 
 exports.firebaseConnect = firebaseConnect;

@@ -20,6 +20,11 @@ exports.createProduct = (req, res, next) =>
 
 exports.readProducts = (req, res, next) => 
 {
+
+    Product.getAllMongo()
+    .then((response) => res.status(201).json(response))
+    .catch((err) => res.status(402).json({message: err}));
+
     /*
     rdb.ref('products').once('value', (snapshot) => {
         let products = snapshot.val();
@@ -39,6 +44,10 @@ exports.readProducts = (req, res, next) =>
 
 exports.readProduct = (req, res, next) => 
 {
+    const productId = req.params.productId;
+    Product.getByIdMongo(productId)
+    .then((response) => res.status(201).json(response))
+    .catch((err) => res.status(402).json({message: err}));
     /*
     const productId = req.params.productId;
     rdb.ref('products').child(productId).once('value', (snapshot) => {
@@ -57,6 +66,23 @@ exports.readProduct = (req, res, next) =>
 
 exports.updateProduct = (req, res, next) => 
 { 
+    const image = req.file;
+    const productId = req.params.productId;
+    let imageUrlToResponse = '';
+    if(req.body.price)
+    {
+        req.body.price = parseFloat(req.body.price);
+    }
+    if(image)
+    {
+        const imageUrl = (image.path).replace(/public\\/, '').replace('\\', '/');
+        req.body.imageUrl = imageUrl ;
+        imageUrlToResponse = `${serverConfig.scheme}://${serverConfig.server}:${serverConfig.port}/${imageUrl}`;
+    }
+    const product = new Product(req.body.title, req.body.price, req.body.imageUrl, productId)
+    product.updateMongo()
+    .then((response) => res.status(201).json(response))
+    .catch((err) => res.status(402).json({message: err}));
     /*
     const image = req.file;
     const productId = req.params.productId;
